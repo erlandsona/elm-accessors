@@ -2,8 +2,8 @@ module Base exposing
     ( Optic(..), Traversal, Lens, Prism, Iso
     , SimpleOptic, SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
     , traversal, lens, prism, iso
-    , ixd, from
-    , get, all, try, has, map, set, new, name
+    , ixd
+    , get, all, try, has, map, set, new, name, to, from
     )
 
 {-|
@@ -24,12 +24,12 @@ Accessors are built using these functions:
 
 # Accessor Lifters for Indexed operations
 
-@docs ixd, from
+@docs ixd
 
 
 # Actions
 
-@docs get, all, try, has, map, set, new, name
+@docs get, all, try, has, map, set, new, name, to, from, over
 
 -}
 
@@ -69,6 +69,18 @@ signature of the function that calls any of requiring eliminators (`get`/
 -}
 type alias Y =
     ()
+
+
+{-| This MUST be a Lens or Iso
+-}
+type alias Getter pr s t a b =
+    Optic pr () s t a b
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias Review ls s t a b =
+    Optic () ls s t a b
 
 
 {-| The lens is "not a prism".
@@ -139,7 +151,7 @@ lens :
     -> (s -> a)
     -> (s -> b -> t)
     -- Any optic composed with a Lens becomes "at least a Lens".
-    -> (Optic pr ls a b x y -> Lens ls s t x y)
+    -> (Lens ls a b x y -> Lens ls s t x y)
 lens n sa sbt sub =
     let
         over_ : (a -> b) -> s -> t
@@ -170,7 +182,7 @@ prism :
     String
     -> (b -> t)
     -> (s -> Result t a)
-    -> (Optic pr ls a b x y -> Prism pr s t x y)
+    -> (Prism pr a b x y -> Prism pr s t x y)
 prism n bt sta sub =
     let
         over_ : (a -> b) -> s -> t
@@ -204,7 +216,7 @@ traversal :
     String
     -> (s -> List a)
     -> ((a -> b) -> s -> t)
-    -> (Optic pr ls a b x y -> Traversal s t x y)
+    -> (Traversal a b x y -> Traversal s t x y)
 traversal n sa abst sub =
     Optic
         { view = void "Can't call `view` with a Traversal"
@@ -235,7 +247,7 @@ iso n sa bt sub =
         |> dot sub
 
 
-dot : Optic any thing a b x y -> Optic pr ls s t a b -> Optic pr ls s t x y
+dot : Optic pr ls u v a b -> Optic pr ls s t u v -> Optic pr ls s t a b
 dot (Optic attribute) (Optic structure) =
     Optic
         { list = structure.list >> List.concatMap attribute.list
@@ -246,19 +258,17 @@ dot (Optic attribute) (Optic structure) =
         }
 
 
-ixd :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> (Optic pr ls a b x y -> Traversal ( ix, s ) t x y)
+ixd : (Optic pr ls a b a b -> Optic pr ls s t a b) -> (Traversal a b x y -> Traversal ( ix, s ) t x y)
 ixd p =
     traversal (name p)
         (\( _, b ) -> all p b)
         (\fn -> Tuple.mapSecond (map p fn) >> Tuple.second)
 
 
-from :
+swap :
     (Optic pr ls a b a b -> Iso pr ls s t a b)
     -> (Optic pr ls t s t s -> Iso pr ls b a t s)
-from accessor =
+swap accessor =
     let
         i =
             id
@@ -268,6 +278,20 @@ from accessor =
     iso (String.reverse i.name)
         i.make
         i.view
+
+
+{-| Get the inverse of an isomorphism
+-}
+from : (Getter pr a b a b -> Getter pr s t a b) -> b -> t
+from =
+    get << swap
+
+
+{-| Alias of `get` for isomorphisms
+-}
+to : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
+to =
+    get
 
 
 id : Optic pr ls a b a b
@@ -324,15 +348,9 @@ want type safe keys for a Dictionary but you still want to use elm/core implemen
 -- Actions
 
 
-get :
-    (Optic pr ls a b a b -> Optic pr Y s t a b)
-    -> s
-    -> a
+get : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
 get accessor =
-    (id
-        |> accessor
-        |> internal
-    ).view
+    (id |> accessor |> internal).view
 
 
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
@@ -384,11 +402,11 @@ try accessor =
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
 
     Just "Stuff"
-        |> all just_
+        |> all just
     --> ["Stuff"]
 
     Nothing
-        |> all just_
+        |> all just
     --> []
 
 -}
@@ -420,7 +438,7 @@ map accessor =
 
 {-| Use prism to reconstruct.
 -}
-new : (Optic pr ls a b a b -> Optic Y ls s t a b) -> b -> t
+new : (Optic pr ls a b a b -> Review ls s t a b) -> b -> t
 new accessor =
     (id |> accessor |> internal).make
 

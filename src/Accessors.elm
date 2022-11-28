@@ -1,11 +1,11 @@
 module Accessors exposing
     ( Optic, SimpleOptic
-    , Traversal, Lens, Prism, Iso
+    , Traversal, Lens, Prism, Iso, Getter, Review
     , SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
     , traversal, lens, prism, iso
-    , ixd, from
-    , get, all, try, has, map, set, new, name
-    , just_, ok_, err_
+    , ixd
+    , get, all, try, has, is, map, over, set, new, name, to, from
+    , just, ok, err
     , values, keyed, key, keyI, key_
     , each, eachIdx, at
     , every, everyIdx, ix
@@ -24,7 +24,7 @@ module Accessors exposing
 
 own accessors more convenient and hopefully easier to understand.
 
-@docs Traversal, Lens, Prism, Iso
+@docs Traversal, Lens, Prism, Iso, Getter, Review
 @docs SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
 
 
@@ -37,7 +37,7 @@ Accessors are built using these functions:
 
 ## Lifters for composing w/ indexed optics
 
-@docs ixd, from
+@docs ixd
 
 
 ## Action functions
@@ -45,12 +45,12 @@ Accessors are built using these functions:
 Action functions are functions that take an accessor and let you perform a
 specific action on data using that accessor.
 
-@docs get, all, try, has, map, set, new, name
+@docs get, all, try, has, is, map, over, set, new, name, to, from
 
 
 ## Common Optics to mitigate `import` noise. Not everything is re-exported.
 
-@docs just_, ok_, err_
+@docs just, ok, err
 @docs values, keyed, key, keyI, key_
 @docs each, eachIdx, at
 @docs every, everyIdx, ix
@@ -105,6 +105,18 @@ type alias Traversal s t a b =
 -}
 type alias Iso pr ls s t a b =
     Base.Iso pr ls s t a b
+
+
+{-| This MUST be a Lens or Iso
+-}
+type alias Getter pr s t a b =
+    Optic pr () s t a b
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias Review ls s t a b =
+    Optic () ls s t a b
 
 
 {-| `Optic` that cannot change type of the object.
@@ -168,7 +180,7 @@ lens :
     String
     -> (s -> a)
     -> (s -> b -> t)
-    -> (Optic pr ls a b x y -> Lens ls s t x y)
+    -> (Lens ls a b x y -> Lens ls s t x y)
 lens =
     Base.lens
 
@@ -187,7 +199,7 @@ prism :
     String
     -> (b -> t)
     -> (s -> Result t a)
-    -> (Optic pr ls a b x y -> Prism pr s t x y)
+    -> (Prism pr a b x y -> Prism pr s t x y)
 prism =
     Base.prism
 
@@ -207,7 +219,7 @@ traversal :
     String
     -> (s -> List a)
     -> ((a -> b) -> s -> t)
-    -> (Optic pr ls a b x y -> Traversal s t x y)
+    -> (Traversal a b x y -> Traversal s t x y)
 traversal =
     Base.traversal
 
@@ -220,18 +232,23 @@ traversal =
 -}
 ixd :
     (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> (Optic pr ls a b x y -> Traversal ( ix, s ) t x y)
+    -> (Traversal a b x y -> Traversal ( ix, s ) t x y)
 ixd =
     Base.ixd
 
 
-{-| Flip an Isomorphism
+{-| Get the inverse of an isomorphism
 -}
-from :
-    (Optic pr ls a b a b -> Iso pr ls s t a b)
-    -> (Optic pr ls t s t s -> Iso pr ls b a t s)
+from : (Getter pr a b a b -> Getter pr s t a b) -> b -> t
 from =
     Base.from
+
+
+{-| Alias of `get` for isomorphisms
+-}
+to : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
+to =
+    Base.to
 
 
 
@@ -249,7 +266,7 @@ get (foo << bar) myRecord
 ```
 
 -}
-get : (Optic pr ls a b a b -> Optic pr () s t a b) -> s -> a
+get : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
 get =
     Base.get
 
@@ -257,11 +274,11 @@ get =
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
 
     Just "Stuff"
-        |> all just_
+        |> all just
     --> ["Stuff"]
 
     Nothing
-        |> all just_
+        |> all just
     --> []
 
 -}
@@ -295,11 +312,11 @@ try =
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
 
     Just 1234
-        |> has just_
+        |> has just
     --> True
 
     Nothing
-        |> has just_
+        |> has just
     --> False
 
     [ "Wooo", "Things" ]
@@ -316,7 +333,14 @@ has =
     Base.has
 
 
-{-| The over function takes:
+{-| alias for `has`
+-}
+is : (Optic pr ls a b a b -> Optic pr ls s t a b) -> s -> Bool
+is =
+    Base.has
+
+
+{-| The map function takes:
 
   - An accessor,
   - A function `(sub -> sub)`,
@@ -331,6 +355,16 @@ map (foo << qux) ((+) 1) myRecord
 -}
 map : (Optic pr ls a b a b -> Optic pr ls s t a b) -> (a -> b) -> s -> t
 map =
+    Base.map
+
+
+{-| alias for `map`
+
+    over (foo << qux) ((+) 1) myRecord
+
+-}
+over : (Optic pr ls a b a b -> Optic pr ls s t a b) -> (a -> b) -> s -> t
+over =
     Base.map
 
 
@@ -354,7 +388,7 @@ set =
 
 {-| Use prism to reconstruct.
 -}
-new : (Optic pr ls a b a b -> Optic () ls s t a b) -> b -> t
+new : (Optic pr ls a b a b -> Review ls s t a b) -> b -> t
 new =
     Base.new
 
@@ -380,22 +414,22 @@ name =
                   , qux = Nothing
                   }
 
-    try (L.foo << just_ << L.bar << just_ << L.stuff) maybeRecord
+    try (L.foo << just << L.bar << just << L.stuff) maybeRecord
     --> Just (Just 2 )
 
-    try (L.qux << just_ << L.bar) maybeRecord
+    try (L.qux << just << L.bar) maybeRecord
     --> Nothing
 
-    map (L.foo << just_ << L.bar << just_ << L.stuff << just_) ((+) 1) maybeRecord
+    map (L.foo << just << L.bar << just << L.stuff << just) ((+) 1) maybeRecord
     --> {foo = Just {bar = Just { stuff = Just 3 }}, qux = Nothing}
 
-    map (L.qux << just_ << L.bar << just_) ((+) 1) maybeRecord
+    map (L.qux << just << L.bar << just) ((+) 1) maybeRecord
     --> {foo = Just {bar = Just {stuff = Just 2}}, qux = Nothing}
 
 -}
-just_ : Optic pr ls a b x y -> Prism pr (Maybe a) (Maybe b) x y
-just_ =
-    Maybe.just_
+just : Prism pr a b x y -> Prism pr (Maybe a) (Maybe b) x y
+just =
+    Maybe.just
 
 
 
@@ -407,13 +441,13 @@ just_ =
 --    maybeRecord = { foo = Just { bar = Just { stuff = Just 2 } }
 --                  , qux = Nothing
 --                  }
---    try (L.foo << just__ << L.bar << just__ << L.stuff) maybeRecord
+--    try (L.foo << just_ << L.bar << just_ << L.stuff) maybeRecord
 --    --> Just 2
---    try (L.qux << just__ << L.bar) maybeRecord
+--    try (L.qux << just_ << L.bar) maybeRecord
 --    --> Nothing
---    map (L.foo << just__ << L.bar << just__ << L.stuff << just__) ((+) 1) maybeRecord
+--    map (L.foo << just_ << L.bar << just_ << L.stuff << just_) ((+) 1) maybeRecord
 --    --> {foo = Just {bar = Just { stuff = Just 3 }}, qux = Nothing}
---    map (L.qux << just__ << L.bar << just__) ((+) 1) maybeRecord
+--    map (L.qux << just_ << L.bar << just_) ((+) 1) maybeRecord
 --    --> {foo = Just {bar = Just {stuff = Just 2}}, qux = Nothing}
 ---}
 --try_ : Optic attr (Maybe view) over -> Optic (Maybe attr) (Maybe view) (Maybe over)
@@ -430,9 +464,9 @@ just_ =
 --    get (key "baz" << def {bar = 0}) dict
 --    --> {bar = 0}
 --    -- NOTE: The following do not compile :thinking:
---    --get (key "foo" << just_ << L.bar << def 0) dict
+--    --get (key "foo" << just << L.bar << def 0) dict
 --    ----> 2
---    --get (key "baz" << just_ << L.bar << def 0) dict
+--    --get (key "baz" << just << L.bar << def 0) dict
 --    ----> 0
 ---}
 --def : attr -> Optic attr view over -> Optic (Maybe attr) view (Maybe over)
@@ -449,9 +483,9 @@ just_ =
 --    ----> {bar = 2}
 --    --get (key "baz" << or {bar = 0}) dict
 --    ----> {bar = 0}
---    get ((key "foo" << just_ << L.bar) |> or 0) dict
+--    get ((key "foo" << just << L.bar) |> or 0) dict
 --    --> 2
---    get ((key "baz" << just_ << L.bar) |> or 0) dict
+--    get ((key "baz" << just << L.bar) |> or 0) dict
 --    --> 0
 ---}
 --or : attr -> (Optic attr attr attrOver -> Optic value (Maybe attr) over) -> Optic attr attrView attrOver -> Optic value attrView over
@@ -462,23 +496,23 @@ just_ =
 {-| This accessor combinator lets you access values inside List.
 alias for [`List.Accessors.each`](List-Accessors#each)
 -}
-each : Optic pr ls a b x y -> Traversal (List a) (List b) x y
+each : Traversal a b x y -> Traversal (List a) (List b) x y
 each =
     List.each
 
 
 {-| This accessor lets you traverse a list including the index of each element
-alias for [`List.Accessors.each_`](List-Accessors#each_)
+alias for [`List.Accessors.eachIdx`](List-Accessors#eachIdx)
 -}
-eachIdx : Optic pr ls ( Int, b ) c x y -> Traversal (List b) (List c) x y
+eachIdx : Traversal ( Int, b ) c x y -> Traversal (List b) (List c) x y
 eachIdx =
-    List.each_
+    List.eachIdx
 
 
 {-| at: Structure Preserving accessor over List members.
 alias for [`List.Accessors.at`](List-Accessors#at)
 -}
-at : Int -> Optic pr ls a a x y -> Traversal (List a) (List a) x y
+at : Int -> Traversal a a x y -> Traversal (List a) (List a) x y
 at =
     List.at
 
@@ -503,13 +537,13 @@ alias for [`Array.Accessors.each`](Array-Accessors#each)
     --> {foo = Array.fromList [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-every : Optic pr ls a b x y -> Traversal (Array a) (Array b) x y
+every : Traversal a b x y -> Traversal (Array a) (Array b) x y
 every =
     Array.each
 
 
 {-| This accessor lets you traverse an Array including the index of each element
-alias for [`Array.Accessors.each_`](Array-Accessors#each_)
+alias for [`Array.Accessors.eachIdx`](Array-Accessors#eachIdx)
 
     import Accessors exposing (..)
     import Lens as L
@@ -543,9 +577,9 @@ alias for [`Array.Accessors.each_`](Array-Accessors#each_)
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}] |> Array.fromList}
 
 -}
-everyIdx : Optic pr ls ( Int, b ) c x y -> Traversal (Array b) (Array c) x y
+everyIdx : Traversal ( Int, b ) c x y -> Traversal (Array b) (Array c) x y
 everyIdx =
-    Array.each_
+    Array.eachIdx
 
 
 {-| alias for [`Array.Accessors.at`](Array-Accessors#at)
@@ -573,7 +607,7 @@ everyIdx =
     --> arr
 
 -}
-ix : Int -> Optic pr ls a a x y -> Traversal (Array a) (Array a) x y
+ix : Int -> Traversal a a x y -> Traversal (Array a) (Array a) x y
 ix =
     Array.at
 
@@ -589,22 +623,22 @@ alias for [`Result.Accessors.onOk`](Result-Accessors#onOk)
                   , qux = Err "Not an Int"
                   }
 
-    try (L.foo << ok_ << L.bar) maybeRecord
+    try (L.foo << ok << L.bar) maybeRecord
     --> Just 2
 
-    try (L.qux << ok_ << L.bar) maybeRecord
+    try (L.qux << ok << L.bar) maybeRecord
     --> Nothing
 
-    map (L.foo << ok_ << L.bar) ((+) 1) maybeRecord
+    map (L.foo << ok << L.bar) ((+) 1) maybeRecord
     --> { foo = Ok { bar = 3 }, qux = Err "Not an Int" }
 
-    map (L.qux << ok_ << L.bar) ((+) 1) maybeRecord
+    map (L.qux << ok << L.bar) ((+) 1) maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
 -}
-ok_ : Optic pr ls a b x y -> Prism pr (Result ignored a) (Result ignored b) x y
-ok_ =
-    Result.ok_
+ok : Prism pr a b x y -> Prism pr (Result ignored a) (Result ignored b) x y
+ok =
+    Result.ok
 
 
 {-| This accessor lets you access values inside the Err variant of a Result.
@@ -618,22 +652,22 @@ alias for [`Result.Accessors.onErr`](Result-Accessors#onErr)
                   , qux = Err "Not an Int"
                   }
 
-    try (L.foo << err_) maybeRecord
+    try (L.foo << err) maybeRecord
     --> Nothing
 
-    try (L.qux << err_) maybeRecord
+    try (L.qux << err) maybeRecord
     --> Just "Not an Int"
 
-    map (L.foo << err_) String.toUpper maybeRecord
+    map (L.foo << err) String.toUpper maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
-    map (L.qux << err_) String.toUpper maybeRecord
+    map (L.qux << err) String.toUpper maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "NOT AN INT" }
 
 -}
-err_ : Optic pr ls a b x y -> Prism pr (Result a ignored) (Result b ignored) x y
-err_ =
-    Result.err_
+err : Prism pr a b x y -> Prism pr (Result a ignored) (Result b ignored) x y
+err =
+    Result.err
 
 
 {-| values: This accessor lets you traverse a Dict including the index of each element
@@ -663,13 +697,13 @@ alias for [`Dict.Accessors.each`](Dict-Accessors#each)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-values : Optic pr ls a b x y -> Traversal (Dict key a) (Dict key b) x y
+values : Traversal a b x y -> Traversal (Dict key a) (Dict key b) x y
 values =
     Dict.each
 
 
 {-| keyed: This accessor lets you traverse a Dict including the index of each element
-alias for [`Dict.Accessors.each_`](Dict-Accessors#each_)
+alias for [`Dict.Accessors.eachIdx`](Dict-Accessors#eachIdx)
 
     import Accessors exposing (..)
     import Lens as L
@@ -703,9 +737,9 @@ alias for [`Dict.Accessors.each_`](Dict-Accessors#each_)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-keyed : Optic pr ls ( a, b ) c x y -> Traversal (Dict a b) (Dict a c) x y
+keyed : Traversal ( a, b ) c x y -> Traversal (Dict a b) (Dict a c) x y
 keyed =
-    Dict.each_
+    Dict.eachIdx
 
 
 {-| key: NON-structure preserving accessor over Dict's
@@ -726,17 +760,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (key "baz") dict
     --> Nothing
 
-    try (key "foo" << just_ << L.bar) dict
+    try (key "foo" << just << L.bar) dict
     --> Just 2
 
     set (key "foo") Nothing dict
     --> Dict.remove "foo" dict
 
-    set (key "baz" << just_ << L.bar) 3 dict
+    set (key "baz" << just << L.bar) 3 dict
     --> dict
 
 -}
-key : String -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict String a) (Dict String a) x y
+key : String -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict String a) (Dict String a) x y
 key =
     Dict.at
 
@@ -759,17 +793,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (keyI 0) dict
     --> Nothing
 
-    try (keyI 1 << just_ << L.bar) dict
+    try (keyI 1 << just << L.bar) dict
     --> Just 2
 
     set (keyI 1) Nothing dict
     --> Dict.remove 1 dict
 
-    set (keyI 0 << just_ << L.bar) 3 dict
+    set (keyI 0 << just << L.bar) 3 dict
     --> dict
 
 -}
-keyI : Int -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict Int a) (Dict Int a) x y
+keyI : Int -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict Int a) (Dict Int a) x y
 keyI =
     Dict.id
 
@@ -786,7 +820,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     dict : Dict Char {bar : Int}
     dict = Dict.fromList [('C', {bar = 2})]
 
-    keyC : Char -> Optic pr ls (Maybe {bar : Int}) (Maybe {bar : Int}) x y -> Lens ls (Dict Char {bar : Int}) (Dict Char {bar : Int}) x y
+    keyC : Char -> Lens ls (Maybe {bar : Int}) (Maybe {bar : Int}) x y -> Lens ls (Dict Char {bar : Int}) (Dict Char {bar : Int}) x y
     keyC =
         key_ String.fromChar
 
@@ -796,17 +830,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (keyC 'Z') dict
     --> Nothing
 
-    try (keyC 'C' << just_ << L.bar) dict
+    try (keyC 'C' << just << L.bar) dict
     --> Just 2
 
     set (keyC 'C') Nothing dict
     --> Dict.remove 'C' dict
 
-    set (keyC 'Z' << just_ << L.bar) 3 dict
+    set (keyC 'Z' << just << L.bar) 3 dict
     --> dict
 
 -}
-key_ : (comparable -> String) -> comparable -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict comparable a) (Dict comparable a) x y
+key_ : (comparable -> String) -> comparable -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict comparable a) (Dict comparable a) x y
 key_ =
     Dict.at_
 
@@ -829,7 +863,7 @@ alias for [`Tuple.Accessors.fst`](Tuple-Accessors#fst)
     --> ("IT'S OVER!!!", 1)
 
 -}
-fst : Optic pr ls a b x y -> Lens ls ( a, two ) ( b, two ) x y
+fst : Lens ls a b x y -> Lens ls ( a, two ) ( b, two ) x y
 fst =
     Tuple.fst
 
@@ -854,6 +888,6 @@ fst =
     --> ("IT'S OVER!!!", 9000)
 
 -}
-snd : Optic pr ls a b x y -> Lens ls ( one, a ) ( one, b ) x y
+snd : Lens ls a b x y -> Lens ls ( one, a ) ( one, b ) x y
 snd =
     Tuple.snd

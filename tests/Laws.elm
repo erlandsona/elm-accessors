@@ -2,12 +2,15 @@ module Laws exposing (..)
 
 import Accessors as A
     exposing
-        ( Iso
+        ( Getter
+        , Iso
         , Optic
+        , Review
         , from
         , get
         , iso
         , new
+        , to
         , try
         )
 import Array exposing (Array)
@@ -43,7 +46,7 @@ suite =
                 A.name (L.info << L.stuff << A.at 7 << L.name)
                     |> eq ".info.stuff[7]?.name"
         , describe "Laws Specs"
-            [ isSetter (L.email << A.just_) personFuzzer strFun string
+            [ isSetter (L.email << A.just) personFuzzer strFun string
             , isSetter (L.stuff << A.at 0) personFuzzer strFun string
             , isSetter (L.stuff << A.each) personFuzzer strFun string
             , isSetter (L.things << A.ix 0) personFuzzer strFun string
@@ -51,9 +54,9 @@ suite =
             , isLens L.name personFuzzer strFun string
             , isLens L.age personFuzzer intFun int
             , isLens (L.info << A.key "stuff") personFuzzer maybeStrFun (Fuzz.maybe string)
-            , isPrism A.just_ (Fuzz.maybe string) string
-            , isPrism A.ok_ (Fuzz.result int string) string
-            , isPrism A.err_ (Fuzz.result int string) int
+            , isPrism A.just (Fuzz.maybe string) string
+            , isPrism A.ok (Fuzz.result int string) string
+            , isPrism A.err (Fuzz.result int string) int
             , isIso intMaybe { s = Fuzz.maybe Fuzz.unit, a = Fuzz.bool, endo = boolFun }
             ]
         ]
@@ -176,7 +179,7 @@ isLens l fzr valFn val =
         ]
 
 
-isPrism : (Optic () ls a a a a -> Optic () ls s s a a) -> Fuzzer s -> Fuzzer a -> Test
+isPrism : (Review ls a a a a -> Review ls s s a a) -> Fuzzer s -> Fuzzer a -> Test
 isPrism pr fzrS fzrA =
     describe ("isPrism: " ++ A.name pr)
         [ fuzz (Fuzz.tuple ( fzrS, fzrA ))
@@ -222,34 +225,34 @@ setter_set_set l s a b =
     A.set l b (A.set l a s) == A.set l b s
 
 
-lens_set_get : (Optic pr () a a a a -> Optic pr () b b a a) -> b -> Bool
+lens_set_get : (Getter pr a a a a -> Getter pr b b a a) -> b -> Bool
 lens_set_get l s =
     A.set l (A.get l s) s == s
 
 
-lens_get_set : (Optic pr () c c c c -> Optic pr () t t c c) -> t -> c -> Bool
+lens_get_set : (Getter pr c c c c -> Getter pr t t c c) -> t -> c -> Bool
 lens_get_set l s a =
     A.get l (A.set l a s) == a
 
 
-prism_yin : (Optic () ls a a a a -> Optic () ls s s a a) -> a -> Bool
+prism_yin : (Review ls a a a a -> Review ls s s a a) -> a -> Bool
 prism_yin l a =
     try l (new l a) == Just a
 
 
-prism_yang : (Optic () ls a a a a -> Optic () ls s s a a) -> s -> Bool
+prism_yang : (Review ls a a a a -> Review ls s s a a) -> s -> Bool
 prism_yang l s =
     (Maybe.withDefault s <| Maybe.map (new l) (try l s)) == s
 
 
-iso_hither : (Iso pr () a a a a -> Iso pr () s s a a) -> s -> Bool
+iso_hither : (Getter pr a a a a -> Getter pr s s a a) -> s -> Bool
 iso_hither l s =
-    (get (from l) <| get l s) == s
+    (from l <| to l s) == s
 
 
-iso_yon : (Iso pr () a a a a -> Iso pr () s s a a) -> a -> Bool
+iso_yon : (Getter pr a a a a -> Getter pr s s a a) -> a -> Bool
 iso_yon l a =
-    (get l <| get (from l) a) == a
+    (to l <| from l a) == a
 
 
 

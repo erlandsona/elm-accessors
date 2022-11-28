@@ -1,12 +1,12 @@
-module SelectList.Accessors exposing (each, each_, selected)
+module SelectList.Accessors exposing (each, eachIdx, selected)
 
 {-| This module exposes some helpers for "miyamoen/select-list"
 
-@docs each, each_, selected
+@docs each, eachIdx, selected
 
 -}
 
-import Base exposing (Optic)
+import Base exposing (Lens, Traversal)
 import SelectList exposing (SelectList)
 
 
@@ -29,7 +29,7 @@ import SelectList exposing (SelectList)
     --> { foo = SelectList.fromLists [{ bar = 2 }] { bar = 3 } [{ bar = 4 }, { bar = 5 }] }
 
 -}
-each : Optic pr ls a b x y -> Base.Traversal (SelectList a) (SelectList b) x y
+each : Traversal a b x y -> Traversal (SelectList a) (SelectList b) x y
 each =
     Base.traversal ":[_]" SelectList.toList SelectList.map
 
@@ -54,21 +54,21 @@ each =
             rec
 
 
-    all (L.foo << SL.each_) listRecord
+    all (L.foo << SL.eachIdx) listRecord
     --> [(0, {bar = 1}), (1, {bar = 2}), (2, {bar = 3}), (3, {bar = 4})]
 
-    map (L.foo << SL.each_) multiplyIfGTOne listRecord
+    map (L.foo << SL.eachIdx) multiplyIfGTOne listRecord
     --> { foo = SelectList.fromLists [{ bar = 1 }] { bar = 20 } [{ bar = 30 }, { bar = 40 }] }
 
-    all (L.foo << SL.each_ << ixd L.bar) listRecord
+    all (L.foo << SL.eachIdx << ixd L.bar) listRecord
     --> [1, 2, 3, 4]
 
-    map (L.foo << SL.each_ << ixd L.bar) ((+) 1) listRecord
+    map (L.foo << SL.eachIdx << ixd L.bar) ((+) 1) listRecord
     --> {foo = SelectList.fromLists [{bar = 2}] {bar = 3} [{bar = 4}, {bar = 5}]}
 
 -}
-each_ : Optic pr ls ( Int, a ) c x y -> Base.Traversal (SelectList a) (SelectList c) x y
-each_ =
+eachIdx : Traversal ( Int, a ) c x y -> Traversal (SelectList a) (SelectList c) x y
+eachIdx =
     Base.traversal "[#]"
         (SelectList.toList >> List.indexedMap Tuple.pair)
         (\fn ls ->
@@ -115,6 +115,6 @@ each_ =
     --> { foo = SelectList.fromLists [{ bar = 1 }] { bar = 20 } [{ bar = 3 }, { bar = 4 }] }
 
 -}
-selected : Optic pr ls b b x y -> Base.Lens ls (SelectList b) (SelectList b) x y
+selected : Lens ls b b x y -> Lens ls (SelectList b) (SelectList b) x y
 selected =
     Base.lens "[^]" SelectList.selected (\rec new -> SelectList.updateSelected (\_ -> new) rec)
