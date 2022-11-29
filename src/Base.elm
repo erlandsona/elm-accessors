@@ -1,9 +1,12 @@
 module Base exposing
-    ( Optic(..), Traversal, Lens, Prism, Iso
-    , SimpleOptic, SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
-    , traversal, lens, prism, iso
-    , ixd, from
-    , get, all, try, has, map, set, new, name
+    ( Optic
+    , Iso, Lens, Prism, Traversal
+    , iso, lens, prism, traversal
+    , get, all, try, has, map, set, new, name, to, from
+    , ixd
+    , Iso_, Lens_, Prism_, Traversal_
+    , An_Optic, An_Iso, A_Lens, A_Prism
+    , An_Optic_, An_Iso_, A_Lens_, A_Prism_
     )
 
 {-|
@@ -11,25 +14,32 @@ module Base exposing
 
 # Optics
 
-@docs Optic, Traversal, Lens, Prism, Iso
-@docs SimpleOptic, SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
+@docs Optic
+@docs Iso, Lens, Prism, Traversal
 
 
 # Build your own accessors
 
 Accessors are built using these functions:
 
-@docs traversal, lens, prism, iso
-
-
-# Accessor Lifters for Indexed operations
-
-@docs ixd, from
+@docs iso, lens, prism, traversal
 
 
 # Actions
 
-@docs get, all, try, has, map, set, new, name
+@docs get, all, try, has, map, set, new, name, to, from, over
+
+
+# Accessor Lifters for Indexed operations
+
+@docs ixd
+
+
+## Type aliases for custom and action functions
+
+@docs Iso_, Lens_, Prism_, Traversal_
+@docs An_Optic, An_Iso, A_Lens, A_Prism
+@docs An_Optic_, An_Iso_, A_Lens_, A_Prism_
 
 -}
 
@@ -45,7 +55,7 @@ Implementation: A relation is a banal record storing a `get` function and an
 `over` function.
 
 -}
-type Optic pr ls s t a b
+type Optic_ pr ls s t a b
     = Optic (Internal s t a b)
 
 
@@ -58,71 +68,111 @@ type alias Internal s t a b =
     }
 
 
-internal : Optic pr ls s t a b -> Internal s t a b
+internal : Optic_ pr ls s t a b -> Internal s t a b
 internal (Optic i) =
     i
 
 
-{-| Use this type as replacement for `pr`/`ls` variable when they are in the
-signature of the function that calls any of requiring eliminators (`get`/
-`review`/`is`).
+{-| Any Optic is both "lens" and "prism".
 -}
-type alias Y =
-    ()
+type alias Optic pr ls s t a b x y =
+    Optic_ pr ls a b x y -> Optic_ pr ls s t x y
 
 
-{-| The lens is "not a prism".
+{-| This MUST be a Prism or Iso
 -}
-type alias Lens ls s t a b =
-    Optic Never ls s t a b
+type alias An_Optic pr ls s a =
+    An_Optic_ pr ls s s a a
 
 
-{-| The prism is "not a lens".
+{-| Any Optic
 -}
-type alias Prism pr s t a b =
-    Optic pr Never s t a b
-
-
-{-| The traversal is neither "lens" or "prism".
--}
-type alias Traversal s t a b =
-    Optic Never Never s t a b
+type alias An_Optic_ pr ls s t a b =
+    Optic pr ls s t a b a b
 
 
 {-| The isomorphism is both "lens" and "prism".
 -}
-type alias Iso pr ls s t a b =
-    Optic pr ls s t a b
+type alias Iso pr ls s a x y =
+    Iso_ pr ls s s a a x y
 
 
-{-| `Optic` that cannot change type of the object.
+{-| The isomorphism is both "lens" and "prism".
 -}
-type alias SimpleOptic pr ls s a =
-    Optic pr ls s s a a
+type alias Iso_ pr ls s t a b x y =
+    Optic pr ls s t a b x y
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias An_Iso s a =
+    An_Iso_ s s a a
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias An_Iso_ s t a b =
+    Optic () () s t a b a b
 
 
 {-| `Lens` that cannot change type of the object.
 -}
-type alias SimpleLens ls s a =
-    Lens ls s s a a
+type alias Lens ls s a x y =
+    Lens_ ls s s a a x y
 
 
-{-| `Prism` that cannot change type of the object.
+{-| The lens is "not a prism".
 -}
-type alias SimplePrism pr s a =
-    Prism pr s s a a
+type alias Lens_ ls s t a b x y =
+    Optic Never ls s t a b x y
 
 
-{-| `Traversal` that cannot change type of the object.
+{-| This MUST be a non-type changing Lens or Iso
 -}
-type alias SimpleTraversal s a =
-    Traversal s s a a
+type alias A_Lens pr s a =
+    A_Lens_ pr s s a a
 
 
-{-| `Iso` that cannot change type of the object.
+{-| This MUST be a Lens or Iso
 -}
-type alias SimpleIso pr ls s a =
-    Iso pr ls s s a a
+type alias A_Lens_ pr s t a b =
+    Optic pr () s t a b a b
+
+
+{-| `Prism` that cannot change the type of the object.
+-}
+type alias Prism pr s a x y =
+    Prism_ pr s s a a x y
+
+
+{-| The prism is "not a lens".
+-}
+type alias Prism_ pr s t a b x y =
+    Optic pr Never s t a b x y
+
+
+{-| This MUST be a non-type changing Prism or Iso
+-}
+type alias A_Prism ls s a =
+    A_Prism_ ls s s a a
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias A_Prism_ ls s t a b =
+    Optic () ls s t a b a b
+
+
+{-| `Traversal` that cannot change the type of the object.
+-}
+type alias Traversal s a x y =
+    Traversal_ s s a a x y
+
+
+{-| The traversal is neither "lens" or "prism".
+-}
+type alias Traversal_ s t a b x y =
+    Optic Never Never s t a b x y
 
 
 {-| This exposes a description field that's necessary for use with the name function
@@ -139,7 +189,7 @@ lens :
     -> (s -> a)
     -> (s -> b -> t)
     -- Any optic composed with a Lens becomes "at least a Lens".
-    -> (Optic pr ls a b x y -> Lens ls s t x y)
+    -> Lens_ ls s t a b x y
 lens n sa sbt sub =
     let
         over_ : (a -> b) -> s -> t
@@ -170,7 +220,7 @@ prism :
     String
     -> (b -> t)
     -> (s -> Result t a)
-    -> (Optic pr ls a b x y -> Prism pr s t x y)
+    -> Prism_ pr s t a b x y
 prism n bt sta sub =
     let
         over_ : (a -> b) -> s -> t
@@ -204,7 +254,7 @@ traversal :
     String
     -> (s -> List a)
     -> ((a -> b) -> s -> t)
-    -> (Optic pr ls a b x y -> Traversal s t x y)
+    -> Traversal_ s t a b x y
 traversal n sa abst sub =
     Optic
         { view = void "Can't call `view` with a Traversal"
@@ -218,7 +268,11 @@ traversal n sa abst sub =
 
 {-| An isomorphism constructor.
 -}
-iso : String -> (s -> a) -> (b -> t) -> Optic pr ls a b x y -> Iso pr ls s t x y
+iso :
+    String
+    -> (s -> a)
+    -> (b -> t)
+    -> Iso_ pr ls s t a b x y
 iso n sa bt sub =
     let
         over_ : (a -> b) -> s -> t
@@ -235,7 +289,7 @@ iso n sa bt sub =
         |> dot sub
 
 
-dot : Optic any thing a b x y -> Optic pr ls s t a b -> Optic pr ls s t x y
+dot : Optic_ pr ls u v a b -> Optic_ pr ls s t u v -> Optic_ pr ls s t a b
 dot (Optic attribute) (Optic structure) =
     Optic
         { list = structure.list >> List.concatMap attribute.list
@@ -246,19 +300,25 @@ dot (Optic attribute) (Optic structure) =
         }
 
 
-ixd :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> (Optic pr ls a b x y -> Traversal ( ix, s ) t x y)
+ixd : An_Optic_ pr ls s t a b -> Traversal_ ( ix, s ) t a b x y
 ixd p =
     traversal (name p)
         (\( _, b ) -> all p b)
         (\fn -> Tuple.mapSecond (map p fn) >> Tuple.second)
 
 
-from :
-    (Optic pr ls a b a b -> Iso pr ls s t a b)
-    -> (Optic pr ls t s t s -> Iso pr ls b a t s)
-from accessor =
+
+-- {-| Get the inverse of an isomorphism
+-- -}
+
+
+from : An_Iso_ s t a b -> b -> t
+from =
+    get << swap
+
+
+swap : An_Iso_ s t a b -> An_Iso_ b a t s
+swap accessor =
     let
         i =
             id
@@ -270,7 +330,14 @@ from accessor =
         i.view
 
 
-id : Optic pr ls a b a b
+{-| Alias of `get` for isomorphisms
+-}
+to : An_Iso_ s t a b -> s -> a
+to =
+    get
+
+
+id : Optic_ pr ls a b a b
 id =
     Optic
         { view = identity
@@ -282,57 +349,7 @@ id =
 
 
 
--- {-| Optical composition.
--- -}
--- o : Optic pr ls s t a b -> Optic pr ls a b x y -> Optic pr ls s t x y
--- o (Optic f) (Optic g) =
---     Optic
---         { list = f.list >> List.concatMap g.list
---         , view = \( y, s ) -> g.view ( y, f.view ( y, s ) )
---         , make = \( y, b ) -> f.make ( y, g.make ( y, b ) )
---         , over = g.over >> f.over
---         , name = f.name ++ g.name
---         }
-
-
-{-| This exposes a description field that's necessary for use with the name function
-for getting unique names out of compositions of accessors. This is useful when you
-want type safe keys for a Dictionary but you still want to use elm/core implementation.
-
-    each : Optic attr view over -> Optic (List attr) view (List over)
-    each =
-        makeOneToN "[]"
-            List.map
-            List.map
-
--}
-
-
-
--- traversal :
---     String
---     -> ((attr -> attrView) -> (value -> view))
---     -> ((attr -> attrOver) -> (value -> over))
---     -> Optic attr attrView attrOver
---     -> Optic value view over
--- traversal n viewAttr overAttr (Optic sub) =
---     Optic
---         { view = viewAttr sub.view
---         , over = overAttr sub.over
---         , name = n ++ sub.name
---         }
 -- Actions
-
-
-get :
-    (Optic pr ls a b a b -> Optic pr Y s t a b)
-    -> s
-    -> a
-get accessor =
-    (id
-        |> accessor
-        |> internal
-    ).view
 
 
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
@@ -354,10 +371,31 @@ get accessor =
     --> True
 
 -}
-has :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> s
-    -> Bool
+get : A_Lens_ pr s t a b -> s -> a
+get accessor =
+    (id |> accessor |> internal).view
+
+
+{-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
+
+    Just 1234
+        |> has try
+    --> True
+
+    Nothing
+        |> has try
+    --> False
+
+    ["Stuff", "things"]
+        |> has (at 2)
+    --> False
+
+    ["Stuff", "things"]
+        |> has (at 0)
+    --> True
+
+-}
+has : An_Optic_ ps ls s t a b -> s -> Bool
 has accessor s =
     try accessor s /= Nothing
 
@@ -373,10 +411,7 @@ has accessor s =
     --> Just "Stuff"
 
 -}
-try :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> s
-    -> Maybe a
+try : An_Optic_ pr ls s t a b -> s -> Maybe a
 try accessor =
     (id |> accessor |> internal).list >> List.head
 
@@ -384,49 +419,38 @@ try accessor =
 {-| Used with a Prism, think of `!!` boolean coercion in Javascript except type safe.
 
     Just "Stuff"
-        |> all just_
+        |> all just
     --> ["Stuff"]
 
     Nothing
-        |> all just_
+        |> all just
     --> []
 
 -}
-all :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> s
-    -> List a
+all : An_Optic_ pr ls s t a b -> s -> List a
 all accessor =
     (id |> accessor |> internal).list
 
 
-set :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> b
-    -> (s -> t)
-set accessor attr =
-    (id |> accessor |> internal).over
-        (\_ -> attr)
+set : An_Optic_ pr ls s t a b -> b -> (s -> t)
+set accessor =
+    map accessor << always
 
 
-map :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> (a -> b)
-    -> s
-    -> t
+map : An_Optic_ pr ls s t a b -> (a -> b) -> s -> t
 map accessor =
     (id |> accessor |> internal).over
 
 
 {-| Use prism to reconstruct.
 -}
-new : (Optic pr ls a b a b -> Optic Y ls s t a b) -> b -> t
+new : A_Prism_ ls s t a b -> b -> t
 new accessor =
     (id |> accessor |> internal).make
 
 
 {-| -}
-name : (Optic pr ls a b a b -> Optic pr ls s t a b) -> String
+name : An_Optic_ pr ls s t a b -> String
 name accessor =
     (id |> accessor |> internal).name
 

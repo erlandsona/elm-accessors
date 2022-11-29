@@ -1,12 +1,12 @@
-module Result.Accessors exposing (ok_, err_)
+module Result.Accessors exposing (ok, err)
 
 {-|
 
-@docs ok_, err_
+@docs ok, err
 
 -}
 
-import Base exposing (Optic, Prism)
+import Base exposing (Prism_)
 import Result exposing (Result(..))
 
 
@@ -21,21 +21,21 @@ import Result exposing (Result(..))
                   , qux = Err "Not an Int"
                   }
 
-    try (L.foo << Result.ok_ << L.bar) maybeRecord
+    try (L.foo << Result.ok << L.bar) maybeRecord
     --> Just 2
 
-    try (L.qux << Result.ok_ << L.bar) maybeRecord
+    try (L.qux << Result.ok << L.bar) maybeRecord
     --> Nothing
 
-    map (L.foo << Result.ok_ << L.bar) ((+) 1) maybeRecord
+    map (L.foo << Result.ok << L.bar) ((+) 1) maybeRecord
     --> { foo = Ok { bar = 3 }, qux = Err "Not an Int" }
 
-    map (L.qux << Result.ok_ << L.bar) ((+) 1) maybeRecord
+    map (L.qux << Result.ok << L.bar) ((+) 1) maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
 -}
-ok_ : Optic pr ls a b x y -> Prism pr (Result ignored a) (Result ignored b) x y
-ok_ =
+ok : Prism_ pr (Result ignored a) (Result ignored b)  a b x y
+ok =
     Base.prism ".?[Ok]" Ok (unwrap (Err >> Err) Ok)
 
 
@@ -50,21 +50,21 @@ ok_ =
                   , qux = Err "Not an Int"
                   }
 
-    try (L.foo << Result.err_) maybeRecord
+    try (L.foo << Result.err) maybeRecord
     --> Nothing
 
-    try (L.qux << Result.err_) maybeRecord
+    try (L.qux << Result.err) maybeRecord
     --> Just "Not an Int"
 
-    map (L.foo << Result.err_) String.toUpper maybeRecord
+    map (L.foo << Result.err) String.toUpper maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
-    map (L.qux << Result.err_) String.toUpper maybeRecord
+    map (L.qux << Result.err) String.toUpper maybeRecord
     --> { foo = Ok { bar = 2 }, qux = Err "NOT AN INT" }
 
 -}
-err_ : Optic pr ls a b x y -> Prism pr (Result a ignored) (Result b ignored) x y
-err_ =
+err : Prism_ pr (Result a ignored) (Result b ignored)  a b x y
+err =
     Base.prism ".?[Err]" Err (unwrap Ok (Ok >> Err))
 
 

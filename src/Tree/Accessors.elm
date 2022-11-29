@@ -10,7 +10,7 @@ module Tree.Accessors exposing
 
 -}
 
-import Base exposing (Lens, Optic, Traversal)
+import Base exposing (Lens, Traversal, Traversal_)
 import Tree exposing (Tree)
 import Tree.Extra.Lue as Tree
 import TreePath exposing (TreePath)
@@ -38,7 +38,7 @@ import TreePath exposing (TreePath)
     --> tree "root" [ tree "A" [ leaf "b" ] , tree "x" [ leaf "y" ] ]
 
 -}
-at : TreePath -> Optic pr ls a a x y -> Traversal (Tree a) (Tree a) x y
+at : TreePath -> Traversal (Tree a) a x y
 at p =
     path p << label_
 
@@ -68,7 +68,7 @@ at p =
     --> tree "ROOT" [ tree "a" [ leaf "b" ] , tree "x" [ leaf "y" ] ]
 
 -}
-label_ : Optic pr ls a a x y -> Lens ls (Tree a) (Tree a) x y
+label_ : Lens ls (Tree a) a x y
 label_ =
     Base.lens "-label"
         Tree.label
@@ -100,7 +100,7 @@ label_ =
     --> tree "root" [ tree "gimme an A!" [ leaf "b" ] , tree "x" [ leaf "y" ] ]
 
 -}
-path : TreePath -> Optic pr ls (Tree a) (Tree a) x y -> Traversal (Tree a) (Tree a) x y
+path : TreePath -> Traversal (Tree a) (Tree a) x y
 path p =
     Base.traversal
         ("<" ++ String.join ", " (List.map String.fromInt p) ++ ">")
@@ -133,6 +133,6 @@ path p =
     --> tree "gimme an R!" [ tree "gimme an A!" [ leaf "gimme an B!" ] , tree "gimme an X!" [ leaf "gimme an Y!" ] ]
 
 -}
-each : Optic pr ls a b x y -> Traversal (Tree a) (Tree b) x y
+each : Traversal_ (Tree a) (Tree b) a b x y
 each =
     Base.traversal "<>" Tree.flatten Tree.map

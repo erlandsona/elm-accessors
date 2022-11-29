@@ -1,13 +1,13 @@
-module Array.Accessors exposing (each, each_, at, id)
+module Array.Accessors exposing (each, eachIdx, at, id)
 
 {-| Array.Accessors
 
-@docs each, each_, at, id
+@docs each, eachIdx, at, id
 
 -}
 
 import Array exposing (Array)
-import Base exposing (Optic, Traversal)
+import Base exposing (Traversal, Traversal_)
 
 
 
@@ -34,7 +34,7 @@ import Base exposing (Optic, Traversal)
     --> {foo = Array.fromList [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-each : Optic pr ls a b x y -> Traversal (Array a) (Array b) x y
+each : Traversal_ (Array a) (Array b) a b x y
 each =
     Base.traversal "[]" Array.toList Array.map
 
@@ -60,21 +60,21 @@ each =
         else
             rec
 
-    all (L.foo << Array.each_) arrayRecord
+    all (L.foo << Array.eachIdx) arrayRecord
     --> [(0, {bar = 2}), (1, {bar = 3}), (2, {bar = 4})]
 
-    map (L.foo << Array.each_) multiplyIfGTOne arrayRecord
+    map (L.foo << Array.eachIdx) multiplyIfGTOne arrayRecord
     --> {foo = [{bar = 2}, {bar = 30}, {bar = 40}] |> Array.fromList}
 
-    all (L.foo << Array.each_ << ixd L.bar) arrayRecord
+    all (L.foo << Array.eachIdx << ixd L.bar) arrayRecord
     --> [2, 3, 4]
 
-    map (L.foo << Array.each_ << ixd L.bar) ((+) 1) arrayRecord
+    map (L.foo << Array.eachIdx << ixd L.bar) ((+) 1) arrayRecord
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}] |> Array.fromList}
 
 -}
-each_ : Optic pr ls ( Int, b ) c x y -> Traversal (Array b) (Array c) x y
-each_ =
+eachIdx : Traversal_ (Array b) (Array c) ( Int, b ) c x y
+eachIdx =
     Base.traversal "#[]"
         (Array.indexedMap Tuple.pair >> Array.toList)
         (\fn -> Array.indexedMap (\idx -> Tuple.pair idx >> fn))
@@ -107,7 +107,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> arr
 
 -}
-at : Int -> Optic pr ls a a x y -> Traversal (Array a) (Array a) x y
+at : Int -> Traversal (Array a) a x y
 at key =
     Base.traversal ("[" ++ String.fromInt key ++ "]")
         (Array.get key >> Maybe.map List.singleton >> Maybe.withDefault [])
@@ -150,7 +150,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> arr
 
 -}
-id : Int -> Optic pr ls { m | id : Int } { m | id : Int } x y -> Traversal (Array { m | id : Int }) (Array { m | id : Int }) x y
+id : Int -> Traversal (Array { m | id : Int }) { m | id : Int } x y
 id key =
     Base.traversal
         ("[" ++ String.fromInt key ++ "]")

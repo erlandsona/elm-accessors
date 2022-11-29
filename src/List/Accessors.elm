@@ -1,17 +1,12 @@
-module List.Accessors exposing (each, each_, at, id)
+module List.Accessors exposing (each, eachIdx, at, id)
 
 {-| List.Accessors
 
-@docs each, each_, at, id
+@docs each, eachIdx, at, id
 
 -}
 
-import Base exposing (Optic(..), Traversal)
-import Tuple.Accessors as Tuple
-
-
-
--- import Maybe.Accessors as Maybe
+import Base exposing (Traversal, Traversal_)
 
 
 {-| This accessor combinator lets you access values inside List.
@@ -34,7 +29,7 @@ import Tuple.Accessors as Tuple
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-each : Optic pr ls a b x y -> Traversal (List a) (List b) x y
+each : Traversal_ (List a) (List b)  a b x y
 each =
     Base.traversal ":[]" identity List.map
 
@@ -59,21 +54,21 @@ each =
         else
             rec
 
-    all (L.foo << List.each_) listRecord
+    all (L.foo << List.eachIdx) listRecord
     --> [(0, {bar = 2}), (1, {bar = 3}), (2, {bar = 4})]
 
-    map (L.foo << List.each_) multiplyIfGTOne listRecord
+    map (L.foo << List.eachIdx) multiplyIfGTOne listRecord
     --> {foo = [{bar = 2}, {bar = 30}, {bar = 40}]}
 
-    all (L.foo << List.each_ << ixd L.bar) listRecord
+    all (L.foo << List.eachIdx << ixd L.bar) listRecord
     --> [2, 3, 4]
 
-    map (L.foo << List.each_ << ixd L.bar) ((+) 1) listRecord
+    map (L.foo << List.eachIdx << ixd L.bar) ((+) 1) listRecord
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-each_ : Optic pr ls ( Int, b ) c x y -> Traversal (List b) (List c) x y
-each_ =
+eachIdx : Traversal_ (List a) (List b)  ( Int, a ) b x y
+eachIdx =
     Base.traversal "#[]"
         (List.indexedMap Tuple.pair)
         (\fn -> List.indexedMap (\idx -> Tuple.pair idx >> fn))
@@ -104,7 +99,7 @@ each_ =
     --> list
 
 -}
-at : Int -> Optic pr ls a a x y -> Traversal (List a) (List a) x y
+at : Int -> Traversal (List a)  a x y
 at key =
     Base.traversal ("[" ++ String.fromInt key ++ "]?")
         (List.foldl
@@ -184,7 +179,7 @@ at key =
     --> list
 
 -}
-id : Int -> Optic pr ls { a | id : Int } { a | id : Int } x y -> Traversal (List { a | id : Int }) (List { a | id : Int }) x y
+id : Int -> Traversal (List { a | id : Int })  { a | id : Int } x y
 id key =
     Base.traversal ("(" ++ String.fromInt key ++ ")?")
         (List.filterMap

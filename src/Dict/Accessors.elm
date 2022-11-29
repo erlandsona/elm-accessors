@@ -1,12 +1,12 @@
-module Dict.Accessors exposing (each, each_, at, id, at_)
+module Dict.Accessors exposing (each, eachIdx, at, id, at_)
 
 {-| Dict.Accessors
 
-@docs each, each_, at, id, at_
+@docs each, eachIdx, at, id, at_
 
 -}
 
-import Base exposing (Lens, Optic, Traversal)
+import Base exposing (Lens, Traversal_)
 import Dict exposing (Dict)
 
 
@@ -37,7 +37,7 @@ import Dict exposing (Dict)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-each : Optic pr ls a b x y -> Traversal (Dict key a) (Dict key b) x y
+each : Traversal_ (Dict key a) (Dict key b) a b x y
 each =
     Base.traversal "{_}"
         Dict.values
@@ -66,21 +66,21 @@ each =
             rec
 
 
-    all (L.foo << Dict.each_) dictRecord
+    all (L.foo << Dict.eachIdx) dictRecord
     --> [("a", {bar = 2}), ("b", {bar = 3}), ("c", {bar = 4})]
 
-    map (L.foo << Dict.each_) multiplyIfA dictRecord
+    map (L.foo << Dict.eachIdx) multiplyIfA dictRecord
     --> {foo = [("a", {bar = 20}), ("b", {bar = 3}), ("c", {bar = 4})] |> Dict.fromList}
 
-    all (L.foo << Dict.each_ << ixd L.bar) dictRecord
+    all (L.foo << Dict.eachIdx << ixd L.bar) dictRecord
     --> [2, 3, 4]
 
-    map (L.foo << Dict.each_ << ixd L.bar) ((+) 1) dictRecord
+    map (L.foo << Dict.eachIdx << ixd L.bar) ((+) 1) dictRecord
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-each_ : Optic pr ls ( a, b ) c x y -> Traversal (Dict a b) (Dict a c) x y
-each_ =
+eachIdx : Traversal_ (Dict key a) (Dict key b) ( key, a ) b x y
+eachIdx =
     Base.traversal "{_}"
         Dict.toList
         (\fn -> Dict.map (\idx -> Tuple.pair idx >> fn))
@@ -104,17 +104,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (Dict.at "baz") dict
     --> Nothing
 
-    try (Dict.at "foo" << just_ << L.bar) dict
+    try (Dict.at "foo" << just << L.bar) dict
     --> Just 2
 
     set (Dict.at "foo") Nothing dict
     --> Dict.remove "foo" dict
 
-    set (Dict.at "baz" << just_ << L.bar) 3 dict
+    set (Dict.at "baz" << just << L.bar) 3 dict
     --> dict
 
 -}
-at : String -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict String a) (Dict String a) x y
+at : String -> Lens ls (Dict String a) (Maybe a) x y
 at =
     at_ identity
 
@@ -137,17 +137,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (Dict.id 0) dict
     --> Nothing
 
-    try (Dict.id 1 << just_ << L.bar) dict
+    try (Dict.id 1 << just << L.bar) dict
     --> Just 2
 
     set (Dict.id 1) Nothing dict
     --> Dict.remove 1 dict
 
-    set (Dict.id 0 << just_ << L.bar) 3 dict
+    set (Dict.id 0 << just << L.bar) 3 dict
     --> dict
 
 -}
-id : Int -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict Int a) (Dict Int a) x y
+id : Int -> Lens ls (Dict Int a) (Maybe a) x y
 id =
     at_ String.fromInt
 
@@ -164,7 +164,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     dict : Dict Char {bar : Int}
     dict = Dict.fromList [('C', {bar = 2})]
 
-    atC : Char -> Optic pr ls (Maybe {bar : Int}) (Maybe {bar : Int}) x y -> Lens ls (Dict Char {bar : Int}) (Dict Char {bar : Int}) x y
+    atC : Char -> Lens ls (Dict Char {bar : Int})  (Maybe {bar : Int}) x y
     atC =
         Dict.at_ String.fromChar
 
@@ -174,17 +174,17 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     get (atC 'Z') dict
     --> Nothing
 
-    try (atC 'C' << just_ << L.bar) dict
+    try (atC 'C' << just << L.bar) dict
     --> Just 2
 
     set (atC 'C') Nothing dict
     --> Dict.remove 'C' dict
 
-    set (atC 'Z' << just_ << L.bar) 3 dict
+    set (atC 'Z' << just << L.bar) 3 dict
     --> dict
 
 -}
-at_ : (comparable -> String) -> comparable -> Optic pr ls (Maybe a) (Maybe a) x y -> Lens ls (Dict comparable a) (Dict comparable a) x y
+at_ : (comparable -> String) -> comparable -> Lens ls (Dict comparable a) (Maybe a) x y
 at_ toS k =
     Base.lens ("{" ++ toS k ++ "}")
         (Dict.get k)
