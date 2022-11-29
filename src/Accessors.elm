@@ -1,10 +1,12 @@
 module Accessors exposing
-    ( Optic, SimpleOptic
-    , Traversal, Lens, Prism, Iso, Getter, Review
-    , SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
+    ( Optic
+    , Iso, Lens, Prism, Traversal
     , traversal, lens, prism, iso
-    , ixd
     , get, all, try, has, is, map, over, set, new, name, to, from
+    , ixd
+    , Iso_, Lens_, Prism_, Traversal_
+    , An_Optic, An_Iso, A_Lens, A_Prism
+    , An_Optic_, An_Iso_, A_Lens_, A_Prism_
     , just, ok, err
     , values, keyed, key, keyI, key_
     , each, eachIdx, at
@@ -17,15 +19,12 @@ module Accessors exposing
 
 ## Optic: is the opaque underlying interface that enables the rest of the library to work.
 
-@docs Optic, SimpleOptic
+@docs Optic
 
 
-## Type Aliases: are shorthands from the Optics nomenclature that make writing your
+## Type Aliases: are shorthands from the Optics nomenclature that make writing your own accessors more convenient and hopefully easier to understand.
 
-own accessors more convenient and hopefully easier to understand.
-
-@docs Traversal, Lens, Prism, Iso, Getter, Review
-@docs SimpleTraversal, SimpleLens, SimplePrism, SimpleIso
+@docs Iso, Lens, Prism, Traversal
 
 
 ## Constructors
@@ -35,17 +34,24 @@ Accessors are built using these functions:
 @docs traversal, lens, prism, iso
 
 
-## Lifters for composing w/ indexed optics
-
-@docs ixd
-
-
 ## Action functions
 
 Action functions are functions that take an accessor and let you perform a
 specific action on data using that accessor.
 
 @docs get, all, try, has, is, map, over, set, new, name, to, from
+
+
+## Lifters for composing w/ indexed optics
+
+@docs ixd
+
+
+## Type aliases for custom and action functions
+
+@docs Iso_, Lens_, Prism_, Traversal_
+@docs An_Optic, An_Iso, A_Lens, A_Prism
+@docs An_Optic_, An_Iso_, A_Lens_, A_Prism_
 
 
 ## Common Optics to mitigate `import` noise. Not everything is re-exported.
@@ -70,83 +76,109 @@ import Tuple.Accessors as Tuple
 
 
 
--- Optic
+-- Optics / Type Aliases
 
 
-{-| Any optic
+{-| Any Optic is both "lens" and "prism".
 -}
-type alias Optic pr ls s t a b =
-    Base.Optic pr ls s t a b
-
-
-
--- Type Aliases
-
-
-{-| The lens is "not a prism".
--}
-type alias Lens ls s t a b =
-    Base.Lens ls s t a b
-
-
-{-| The prism is "not a lens".
--}
-type alias Prism pr s t a b =
-    Base.Prism pr s t a b
-
-
-{-| The traversal is neither "lens" or "prism".
--}
-type alias Traversal s t a b =
-    Base.Traversal s t a b
-
-
-{-| The isomorphism is both "lens" and "prism".
--}
-type alias Iso pr ls s t a b =
-    Base.Iso pr ls s t a b
-
-
-{-| This MUST be a Lens or Iso
--}
-type alias Getter pr s t a b =
-    Optic pr () s t a b
+type alias Optic pr ls s t a b x y =
+    Base.Optic pr ls s t a b x y
 
 
 {-| This MUST be a Prism or Iso
 -}
-type alias Review ls s t a b =
-    Optic () ls s t a b
+type alias An_Optic pr ls s a =
+    Base.An_Optic pr ls s a
 
 
-{-| `Optic` that cannot change type of the object.
+{-| Any Optic
 -}
-type alias SimpleOptic pr ls s a =
-    Optic pr ls s s a a
+type alias An_Optic_ pr ls s t a b =
+    Base.An_Optic_ pr ls s t a b
+
+
+{-| The isomorphism is both "lens" and "prism".
+-}
+type alias Iso pr ls s a x y =
+    Base.Iso pr ls s a x y
+
+
+{-| The isomorphism is both "lens" and "prism".
+-}
+type alias Iso_ pr ls s t a b x y =
+    Base.Iso_ pr ls s t a b x y
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias An_Iso s a =
+    Base.An_Iso s a
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias An_Iso_ s t a b =
+    Base.An_Iso_ s t a b
 
 
 {-| `Lens` that cannot change type of the object.
 -}
-type alias SimpleLens ls s a =
-    Lens ls s s a a
+type alias Lens ls s a x y =
+    Base.Lens ls s a x y
 
 
-{-| `Prism` that cannot change type of the object.
+{-| The lens is "not a prism".
 -}
-type alias SimplePrism pr s a =
-    Prism pr s s a a
+type alias Lens_ ls s t a b x y =
+    Base.Lens_ ls s t a b x y
 
 
-{-| `Traversal` that cannot change type of the object.
+{-| This MUST be a non-type changing Lens or Iso
 -}
-type alias SimpleTraversal s a =
-    Traversal s s a a
+type alias A_Lens pr s a =
+    Base.A_Lens pr s a
 
 
-{-| `Iso` that cannot change type of the object.
+{-| This MUST be a Lens or Iso
 -}
-type alias SimpleIso pr ls s a =
-    Iso pr ls s s a a
+type alias A_Lens_ pr s t a b =
+    Base.A_Lens_ pr s t a b
+
+
+{-| `Prism` that cannot change the type of the object.
+-}
+type alias Prism pr s a x y =
+    Base.Prism pr s a x y
+
+
+{-| The prism is "not a lens".
+-}
+type alias Prism_ pr s t a b x y =
+    Base.Prism_ pr s t a b x y
+
+
+{-| This MUST be a non-type changing Prism or Iso
+-}
+type alias A_Prism ls s a =
+    Base.A_Prism ls s a
+
+
+{-| This MUST be a Prism or Iso
+-}
+type alias A_Prism_ ls s t a b =
+    Base.A_Prism_ ls s t a b
+
+
+{-| `Traversal` that cannot change the type of the object.
+-}
+type alias Traversal s a x y =
+    Base.Traversal s a x y
+
+
+{-| The traversal is neither "lens" or "prism".
+-}
+type alias Traversal_ s t a b x y =
+    Base.Traversal_ s t a b x y
 
 
 
@@ -159,7 +191,7 @@ iso :
     String
     -> (s -> a)
     -> (b -> t)
-    -> (Optic pr ls a b x y -> Iso pr ls s t x y)
+    -> Iso_ pr ls s t a b x y
 iso =
     Base.iso
 
@@ -180,7 +212,7 @@ lens :
     String
     -> (s -> a)
     -> (s -> b -> t)
-    -> (Lens ls a b x y -> Lens ls s t x y)
+    -> Lens_ ls s t a b x y
 lens =
     Base.lens
 
@@ -199,7 +231,7 @@ prism :
     String
     -> (b -> t)
     -> (s -> Result t a)
-    -> (Prism pr a b x y -> Prism pr s t x y)
+    -> Prism_ pr s t a b x y
 prism =
     Base.prism
 
@@ -219,7 +251,7 @@ traversal :
     String
     -> (s -> List a)
     -> ((a -> b) -> s -> t)
-    -> (Traversal a b x y -> Traversal s t x y)
+    -> Traversal_ s t a b x y
 traversal =
     Base.traversal
 
@@ -230,23 +262,21 @@ traversal =
 
 {-| Lift an optic over an indexed traversal
 -}
-ixd :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> (Traversal a b x y -> Traversal ( ix, s ) t x y)
+ixd : An_Optic_ pr ls s t a b -> Traversal_ ( ix, s ) t a b x y
 ixd =
     Base.ixd
 
 
 {-| Get the inverse of an isomorphism
 -}
-from : (Getter pr a b a b -> Getter pr s t a b) -> b -> t
+from : An_Iso_ s t a b -> b -> t
 from =
     Base.from
 
 
 {-| Alias of `get` for isomorphisms
 -}
-to : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
+to : An_Iso_ s t a b -> s -> a
 to =
     Base.to
 
@@ -266,7 +296,7 @@ get (foo << bar) myRecord
 ```
 
 -}
-get : (Optic pr ls a b a b -> Getter pr s t a b) -> s -> a
+get : A_Lens_ pr s t a b -> s -> a
 get =
     Base.get
 
@@ -282,10 +312,7 @@ get =
     --> []
 
 -}
-all :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> s
-    -> List a
+all : An_Optic_ pr ls s t a b -> s -> List a
 all =
     Base.all
 
@@ -301,10 +328,7 @@ all =
     --> Just "Stuff"
 
 -}
-try :
-    (Optic pr ls a b a b -> Optic pr ls s t a b)
-    -> s
-    -> Maybe a
+try : An_Optic_ pr ls s t a b -> s -> Maybe a
 try =
     Base.try
 
@@ -328,14 +352,14 @@ try =
     --> True
 
 -}
-has : (Optic pr ls a b a b -> Optic pr ls s t a b) -> s -> Bool
+has : An_Optic_ pr ls s t a b -> s -> Bool
 has =
     Base.has
 
 
 {-| alias for `has`
 -}
-is : (Optic pr ls a b a b -> Optic pr ls s t a b) -> s -> Bool
+is : An_Optic_ pr ls s t a b -> s -> Bool
 is =
     Base.has
 
@@ -353,7 +377,7 @@ map (foo << qux) ((+) 1) myRecord
 ```
 
 -}
-map : (Optic pr ls a b a b -> Optic pr ls s t a b) -> (a -> b) -> s -> t
+map : An_Optic_ pr ls s t a b -> (a -> b) -> s -> t
 map =
     Base.map
 
@@ -363,7 +387,7 @@ map =
     over (foo << qux) ((+) 1) myRecord
 
 -}
-over : (Optic pr ls a b a b -> Optic pr ls s t a b) -> (a -> b) -> s -> t
+over : An_Optic_ pr ls s t a b -> (a -> b) -> s -> t
 over =
     Base.map
 
@@ -381,21 +405,21 @@ set (foo << bar) "Hi!" myRecord
 ```
 
 -}
-set : (Optic pr ls a b a b -> Optic pr ls s t a b) -> b -> s -> t
+set : An_Optic_ pr ls s t a b -> b -> s -> t
 set =
     Base.set
 
 
 {-| Use prism to reconstruct.
 -}
-new : (Optic pr ls a b a b -> Review ls s t a b) -> b -> t
+new : A_Prism_ ls s t a b -> b -> t
 new =
     Base.new
 
 
 {-| This function gives the name of the function as a string...
 -}
-name : (Optic pr ls a b a b -> Optic pr ls s t a b) -> String
+name : An_Optic_ pr ls s t a b -> String
 name =
     Base.name
 
@@ -427,76 +451,15 @@ name =
     --> {foo = Just {bar = Just {stuff = Just 2}}, qux = Nothing}
 
 -}
-just : Prism pr a b x y -> Prism pr (Maybe a) (Maybe b) x y
+just : Prism_ pr (Maybe a) (Maybe b) a b x y
 just =
     Maybe.just
-
-
-
---{-| This accessor combinator lets you access values inside Maybe.
---see [`try`](Maybe-Accessors#try) for a NON-flattening lens.
---    import Accessors exposing (..)
---    import Lens as L
---    maybeRecord : { foo : Maybe { bar : Maybe {stuff : Maybe Int} }, qux : Maybe { bar : Maybe Int } }
---    maybeRecord = { foo = Just { bar = Just { stuff = Just 2 } }
---                  , qux = Nothing
---                  }
---    try (L.foo << just_ << L.bar << just_ << L.stuff) maybeRecord
---    --> Just 2
---    try (L.qux << just_ << L.bar) maybeRecord
---    --> Nothing
---    map (L.foo << just_ << L.bar << just_ << L.stuff << just_) ((+) 1) maybeRecord
---    --> {foo = Just {bar = Just { stuff = Just 3 }}, qux = Nothing}
---    map (L.qux << just_ << L.bar << just_) ((+) 1) maybeRecord
---    --> {foo = Just {bar = Just {stuff = Just 2}}, qux = Nothing}
----}
---try_ : Optic attr (Maybe view) over -> Optic (Maybe attr) (Maybe view) (Maybe over)
---try_ =
---    Maybe.try_
---{-| This accessor combinator lets you provide a default value for otherwise failable compositions
---    import Dict exposing (Dict)
---    import Lens as L
---    dict : Dict String {bar : Int}
---    dict =
---        Dict.fromList [("foo", {bar = 2})]
---    get (key "foo" << def {bar = 0}) dict
---    --> {bar = 2}
---    get (key "baz" << def {bar = 0}) dict
---    --> {bar = 0}
---    -- NOTE: The following do not compile :thinking:
---    --get (key "foo" << just << L.bar << def 0) dict
---    ----> 2
---    --get (key "baz" << just << L.bar << def 0) dict
---    ----> 0
----}
---def : attr -> Optic attr view over -> Optic (Maybe attr) view (Maybe over)
---def =
---    Maybe.def
---{-| This accessor combinator lets you provide a default value for otherwise failable compositions
---    import Dict exposing (Dict)
---    import Lens as L
---    dict : Dict String {bar : Int}
---    dict =
---        Dict.fromList [("foo", {bar = 2})]
---    -- NOTE: Use `def` for this.
---    --get (key "foo" << or {bar = 0}) dict
---    ----> {bar = 2}
---    --get (key "baz" << or {bar = 0}) dict
---    ----> {bar = 0}
---    get ((key "foo" << just << L.bar) |> or 0) dict
---    --> 2
---    get ((key "baz" << just << L.bar) |> or 0) dict
---    --> 0
----}
---or : attr -> (Optic attr attr attrOver -> Optic value (Maybe attr) over) -> Optic attr attrView attrOver -> Optic value attrView over
---or =
---    Maybe.or
 
 
 {-| This accessor combinator lets you access values inside List.
 alias for [`List.Accessors.each`](List-Accessors#each)
 -}
-each : Traversal a b x y -> Traversal (List a) (List b) x y
+each : Traversal_ (List a) (List b) a b x y
 each =
     List.each
 
@@ -504,7 +467,7 @@ each =
 {-| This accessor lets you traverse a list including the index of each element
 alias for [`List.Accessors.eachIdx`](List-Accessors#eachIdx)
 -}
-eachIdx : Traversal ( Int, b ) c x y -> Traversal (List b) (List c) x y
+eachIdx : Traversal_ (List a) (List b) ( Int, a ) b x y
 eachIdx =
     List.eachIdx
 
@@ -512,7 +475,7 @@ eachIdx =
 {-| at: Structure Preserving accessor over List members.
 alias for [`List.Accessors.at`](List-Accessors#at)
 -}
-at : Int -> Traversal a a x y -> Traversal (List a) (List a) x y
+at : Int -> Traversal (List a) a x y
 at =
     List.at
 
@@ -537,7 +500,7 @@ alias for [`Array.Accessors.each`](Array-Accessors#each)
     --> {foo = Array.fromList [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-every : Traversal a b x y -> Traversal (Array a) (Array b) x y
+every : Traversal_ (Array a) (Array b) a b x y
 every =
     Array.each
 
@@ -577,7 +540,7 @@ alias for [`Array.Accessors.eachIdx`](Array-Accessors#eachIdx)
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}] |> Array.fromList}
 
 -}
-everyIdx : Traversal ( Int, b ) c x y -> Traversal (Array b) (Array c) x y
+everyIdx : Traversal_ (Array b) (Array c) ( Int, b ) c x y
 everyIdx =
     Array.eachIdx
 
@@ -607,7 +570,7 @@ everyIdx =
     --> arr
 
 -}
-ix : Int -> Traversal a a x y -> Traversal (Array a) (Array a) x y
+ix : Int -> Traversal (Array a) a x y
 ix =
     Array.at
 
@@ -636,7 +599,7 @@ alias for [`Result.Accessors.onOk`](Result-Accessors#onOk)
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
 -}
-ok : Prism pr a b x y -> Prism pr (Result ignored a) (Result ignored b) x y
+ok : Prism_ pr (Result ignored a) (Result ignored b) a b x y
 ok =
     Result.ok
 
@@ -665,7 +628,7 @@ alias for [`Result.Accessors.onErr`](Result-Accessors#onErr)
     --> { foo = Ok { bar = 2 }, qux = Err "NOT AN INT" }
 
 -}
-err : Prism pr a b x y -> Prism pr (Result a ignored) (Result b ignored) x y
+err : Prism_ pr (Result a ignored) (Result b ignored) a b x y
 err =
     Result.err
 
@@ -697,7 +660,7 @@ alias for [`Dict.Accessors.each`](Dict-Accessors#each)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-values : Traversal a b x y -> Traversal (Dict key a) (Dict key b) x y
+values : Traversal_ (Dict key a) (Dict key b) a b x y
 values =
     Dict.each
 
@@ -737,7 +700,7 @@ alias for [`Dict.Accessors.eachIdx`](Dict-Accessors#eachIdx)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-keyed : Traversal ( a, b ) c x y -> Traversal (Dict a b) (Dict a c) x y
+keyed : Traversal_ (Dict key a) (Dict key b) ( key, a ) b x y
 keyed =
     Dict.eachIdx
 
@@ -770,7 +733,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-key : String -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict String a) (Dict String a) x y
+key : String -> Lens ls (Dict String a) (Maybe a) x y
 key =
     Dict.at
 
@@ -803,7 +766,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-keyI : Int -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict Int a) (Dict Int a) x y
+keyI : Int -> Lens ls (Dict Int a) (Maybe a) x y
 keyI =
     Dict.id
 
@@ -820,7 +783,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     dict : Dict Char {bar : Int}
     dict = Dict.fromList [('C', {bar = 2})]
 
-    keyC : Char -> Lens ls (Maybe {bar : Int}) (Maybe {bar : Int}) x y -> Lens ls (Dict Char {bar : Int}) (Dict Char {bar : Int}) x y
+    keyC : Char -> Lens ls (Dict Char { bar : Int })  (Maybe { bar : Int }) x y
     keyC =
         key_ String.fromChar
 
@@ -840,7 +803,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-key_ : (comparable -> String) -> comparable -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict comparable a) (Dict comparable a) x y
+key_ : (comparable -> String) -> comparable -> Lens ls (Dict comparable a) (Maybe a) x y
 key_ =
     Dict.at_
 
@@ -863,7 +826,7 @@ alias for [`Tuple.Accessors.fst`](Tuple-Accessors#fst)
     --> ("IT'S OVER!!!", 1)
 
 -}
-fst : Lens ls a b x y -> Lens ls ( a, two ) ( b, two ) x y
+fst : Lens_ ls ( a, two ) ( b, two ) a b x y
 fst =
     Tuple.fst
 
@@ -888,6 +851,6 @@ fst =
     --> ("IT'S OVER!!!", 9000)
 
 -}
-snd : Lens ls a b x y -> Lens ls ( one, a ) ( one, b ) x y
+snd : Lens_ ls ( one, a ) ( one, b ) a b x y
 snd =
     Tuple.snd

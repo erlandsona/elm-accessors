@@ -6,7 +6,7 @@ module Dict.Accessors exposing (each, eachIdx, at, id, at_)
 
 -}
 
-import Base exposing (Lens, Optic, Traversal)
+import Base exposing (Lens, Traversal_)
 import Dict exposing (Dict)
 
 
@@ -37,7 +37,7 @@ import Dict exposing (Dict)
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-each : Traversal a b x y -> Traversal (Dict key a) (Dict key b) x y
+each : Traversal_ (Dict key a) (Dict key b) a b x y
 each =
     Base.traversal "{_}"
         Dict.values
@@ -79,7 +79,7 @@ each =
     --> {foo = [("a", {bar = 3}), ("b", {bar = 4}), ("c", {bar = 5})] |> Dict.fromList}
 
 -}
-eachIdx : Traversal ( a, b ) c x y -> Traversal (Dict a b) (Dict a c) x y
+eachIdx : Traversal_ (Dict key a) (Dict key b) ( key, a ) b x y
 eachIdx =
     Base.traversal "{_}"
         Dict.toList
@@ -114,7 +114,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-at : String -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict String a) (Dict String a) x y
+at : String -> Lens ls (Dict String a) (Maybe a) x y
 at =
     at_ identity
 
@@ -147,7 +147,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-id : Int -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict Int a) (Dict Int a) x y
+id : Int -> Lens ls (Dict Int a) (Maybe a) x y
 id =
     at_ String.fromInt
 
@@ -164,7 +164,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     dict : Dict Char {bar : Int}
     dict = Dict.fromList [('C', {bar = 2})]
 
-    atC : Char -> Lens ls (Maybe {bar : Int}) (Maybe {bar : Int}) x y -> Lens ls (Dict Char {bar : Int}) (Dict Char {bar : Int}) x y
+    atC : Char -> Lens ls (Dict Char {bar : Int})  (Maybe {bar : Int}) x y
     atC =
         Dict.at_ String.fromChar
 
@@ -184,7 +184,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> dict
 
 -}
-at_ : (comparable -> String) -> comparable -> Lens ls (Maybe a) (Maybe a) x y -> Lens ls (Dict comparable a) (Dict comparable a) x y
+at_ : (comparable -> String) -> comparable -> Lens ls (Dict comparable a) (Maybe a) x y
 at_ toS k =
     Base.lens ("{" ++ toS k ++ "}")
         (Dict.get k)

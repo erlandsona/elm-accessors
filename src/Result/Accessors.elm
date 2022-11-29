@@ -6,7 +6,7 @@ module Result.Accessors exposing (ok, err)
 
 -}
 
-import Base exposing (Prism)
+import Base exposing (Prism_)
 import Result exposing (Result(..))
 
 
@@ -34,7 +34,7 @@ import Result exposing (Result(..))
     --> { foo = Ok { bar = 2 }, qux = Err "Not an Int" }
 
 -}
-ok : Prism pr a b x y -> Prism pr (Result ignored a) (Result ignored b) x y
+ok : Prism_ pr (Result ignored a) (Result ignored b)  a b x y
 ok =
     Base.prism ".?[Ok]" Ok (unwrap (Err >> Err) Ok)
 
@@ -63,7 +63,7 @@ ok =
     --> { foo = Ok { bar = 2 }, qux = Err "NOT AN INT" }
 
 -}
-err : Prism pr a b x y -> Prism pr (Result a ignored) (Result b ignored) x y
+err : Prism_ pr (Result a ignored) (Result b ignored)  a b x y
 err =
     Base.prism ".?[Err]" Err (unwrap Ok (Ok >> Err))
 

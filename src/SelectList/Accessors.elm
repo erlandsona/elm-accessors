@@ -6,7 +6,7 @@ module SelectList.Accessors exposing (each, eachIdx, selected)
 
 -}
 
-import Base exposing (Lens, Traversal)
+import Base exposing (Lens, Traversal_)
 import SelectList exposing (SelectList)
 
 
@@ -29,7 +29,7 @@ import SelectList exposing (SelectList)
     --> { foo = SelectList.fromLists [{ bar = 2 }] { bar = 3 } [{ bar = 4 }, { bar = 5 }] }
 
 -}
-each : Traversal a b x y -> Traversal (SelectList a) (SelectList b) x y
+each : Traversal_ (SelectList a) (SelectList b) a b x y
 each =
     Base.traversal ":[_]" SelectList.toList SelectList.map
 
@@ -67,7 +67,7 @@ each =
     --> {foo = SelectList.fromLists [{bar = 2}] {bar = 3} [{bar = 4}, {bar = 5}]}
 
 -}
-eachIdx : Traversal ( Int, a ) c x y -> Traversal (SelectList a) (SelectList c) x y
+eachIdx : Traversal_ (SelectList a) (SelectList b) ( Int, a ) b x y
 eachIdx =
     Base.traversal "[#]"
         (SelectList.toList >> List.indexedMap Tuple.pair)
@@ -115,6 +115,6 @@ eachIdx =
     --> { foo = SelectList.fromLists [{ bar = 1 }] { bar = 20 } [{ bar = 3 }, { bar = 4 }] }
 
 -}
-selected : Lens ls b b x y -> Lens ls (SelectList b) (SelectList b) x y
+selected : Lens ls (SelectList a) a x y
 selected =
     Base.lens "[^]" SelectList.selected (\rec new -> SelectList.updateSelected (\_ -> new) rec)

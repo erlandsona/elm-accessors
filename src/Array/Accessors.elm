@@ -1,7 +1,4 @@
-module Array.Accessors exposing
-    ( each, at, id
-    , eachIdx
-    )
+module Array.Accessors exposing (each, eachIdx, at, id)
 
 {-| Array.Accessors
 
@@ -10,7 +7,7 @@ module Array.Accessors exposing
 -}
 
 import Array exposing (Array)
-import Base exposing (Optic, Traversal)
+import Base exposing (Traversal, Traversal_)
 
 
 
@@ -37,7 +34,7 @@ import Base exposing (Optic, Traversal)
     --> {foo = Array.fromList [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-each : Traversal a b x y -> Traversal (Array a) (Array b) x y
+each : Traversal_ (Array a) (Array b) a b x y
 each =
     Base.traversal "[]" Array.toList Array.map
 
@@ -76,7 +73,7 @@ each =
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}] |> Array.fromList}
 
 -}
-eachIdx : Traversal ( Int, b ) c x y -> Traversal (Array b) (Array c) x y
+eachIdx : Traversal_ (Array b) (Array c) ( Int, b ) c x y
 eachIdx =
     Base.traversal "#[]"
         (Array.indexedMap Tuple.pair >> Array.toList)
@@ -110,7 +107,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> arr
 
 -}
-at : Int -> Traversal a a x y -> Traversal (Array a) (Array a) x y
+at : Int -> Traversal (Array a) a x y
 at key =
     Base.traversal ("[" ++ String.fromInt key ++ "]")
         (Array.get key >> Maybe.map List.singleton >> Maybe.withDefault [])
@@ -153,7 +150,7 @@ In terms of accessors, think of Dicts as records where each field is a Maybe.
     --> arr
 
 -}
-id : Int -> Traversal { m | id : Int } { m | id : Int } x y -> Traversal (Array { m | id : Int }) (Array { m | id : Int }) x y
+id : Int -> Traversal (Array { m | id : Int }) { m | id : Int } x y
 id key =
     Base.traversal
         ("[" ++ String.fromInt key ++ "]")

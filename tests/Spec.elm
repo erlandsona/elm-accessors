@@ -222,7 +222,7 @@ suite =
             ]
         , describe "making accessors"
             [ let
-                myFoo : Lens ls a a x y -> Lens ls { m | foo : a } { m | foo : a } x y
+                myFoo : Lens ls { m | foo : a } a x y
                 myFoo =
                     lens ".foo" .foo (\rec val -> { rec | foo = val })
               in
@@ -249,7 +249,7 @@ suite =
                         updatedRec.foo.foo |> Expect.equal 6
                 ]
             , let
-                myOnEach : Traversal a b x y -> Traversal (List a) (List b) x y
+                myOnEach : Traversal_ (List a) (List b) a b x y
                 myOnEach =
                     traversal "[]" identity List.map
               in

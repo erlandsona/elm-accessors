@@ -6,12 +6,7 @@ module List.Accessors exposing (each, eachIdx, at, id)
 
 -}
 
-import Base exposing (Optic(..), Traversal)
-import Tuple.Accessors as Tuple
-
-
-
--- import Maybe.Accessors as Maybe
+import Base exposing (Traversal, Traversal_)
 
 
 {-| This accessor combinator lets you access values inside List.
@@ -34,7 +29,7 @@ import Tuple.Accessors as Tuple
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-each : Traversal a b x y -> Traversal (List a) (List b) x y
+each : Traversal_ (List a) (List b)  a b x y
 each =
     Base.traversal ":[]" identity List.map
 
@@ -72,7 +67,7 @@ each =
     --> {foo = [{bar = 3}, {bar = 4}, {bar = 5}]}
 
 -}
-eachIdx : Traversal ( Int, b ) c x y -> Traversal (List b) (List c) x y
+eachIdx : Traversal_ (List a) (List b)  ( Int, a ) b x y
 eachIdx =
     Base.traversal "#[]"
         (List.indexedMap Tuple.pair)
@@ -104,7 +99,7 @@ eachIdx =
     --> list
 
 -}
-at : Int -> Traversal a a x y -> Traversal (List a) (List a) x y
+at : Int -> Traversal (List a)  a x y
 at key =
     Base.traversal ("[" ++ String.fromInt key ++ "]?")
         (List.foldl
@@ -184,7 +179,7 @@ at key =
     --> list
 
 -}
-id : Int -> Traversal { a | id : Int } { a | id : Int } x y -> Traversal (List { a | id : Int }) (List { a | id : Int }) x y
+id : Int -> Traversal (List { a | id : Int })  { a | id : Int } x y
 id key =
     Base.traversal ("(" ++ String.fromInt key ++ ")?")
         (List.filterMap

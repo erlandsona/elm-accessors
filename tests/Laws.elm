@@ -2,18 +2,21 @@ module Laws exposing (..)
 
 import Accessors as A
     exposing
-        ( Getter
+        ( A_Lens
+        , A_Prism
+        , An_Iso
+        , An_Optic
+        , An_Optic_
         , Iso
-        , Optic
-        , Review
+        , Iso_
         , from
-        , get
         , iso
         , new
         , to
         , try
         )
 import Array exposing (Array)
+import Base exposing (A_Lens, Optic)
 import Dict exposing (Dict)
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, string)
@@ -62,7 +65,7 @@ suite =
         ]
 
 
-intMaybe : Optic pr ls Bool Bool x y -> Iso pr ls (Maybe ()) (Maybe ()) x y
+intMaybe : Iso pr ls (Maybe ()) Bool x y
 intMaybe =
     iso "nulllyInt"
         (\maybeh ->
@@ -140,7 +143,7 @@ personFuzzer =
         |> Fuzz.andMap (Fuzz.list string |> Fuzz.map Array.fromList)
 
 
-isSetter : (Optic pr ls c c c c -> Optic pr ls a a c c) -> Fuzzer a -> Fuzzer (c -> c) -> Fuzzer c -> Test
+isSetter : Optic pr ls a a c c c c -> Fuzzer a -> Fuzzer (c -> c) -> Fuzzer c -> Test
 isSetter l fzr fnFzr val =
     describe ("isSetable: " ++ A.name l)
         [ fuzz fzr
@@ -163,7 +166,7 @@ isSetter l fzr fnFzr val =
         ]
 
 
-isLens : (Optic pr () b b b b -> Optic pr () a a b b) -> Fuzzer a -> Fuzzer (b -> b) -> Fuzzer b -> Test
+isLens : A_Lens pr a b -> Fuzzer a -> Fuzzer (b -> b) -> Fuzzer b -> Test
 isLens l fzr valFn val =
     describe ("isLens: " ++ A.name l)
         [ isSetter l fzr valFn val
@@ -179,7 +182,7 @@ isLens l fzr valFn val =
         ]
 
 
-isPrism : (Review ls a a a a -> Review ls s s a a) -> Fuzzer s -> Fuzzer a -> Test
+isPrism : A_Prism ls s a -> Fuzzer s -> Fuzzer a -> Test
 isPrism pr fzrS fzrA =
     describe ("isPrism: " ++ A.name pr)
         [ fuzz (Fuzz.tuple ( fzrS, fzrA ))
@@ -194,7 +197,7 @@ isPrism pr fzrS fzrA =
 
 
 isIso :
-    (Optic () () a a a a -> Optic () () s s a a)
+    An_Iso s a
     ->
         { a : Fuzzer a
         , endo : Fuzzer (a -> a)
@@ -210,47 +213,47 @@ isIso i fzrs =
         ]
 
 
-setter_id : (Optic pr ls a a a a -> Optic pr ls b b a a) -> b -> Bool
+setter_id : An_Optic pr ls s a -> s -> Bool
 setter_id l s =
     A.map l identity s == s
 
 
-setter_composition : (Optic pr ls b b b b -> Optic pr ls t t b b) -> t -> (b -> b) -> (b -> b) -> Bool
+setter_composition : An_Optic pr ls s a -> s -> (a -> a) -> (a -> a) -> Bool
 setter_composition l s f g =
     A.map l f (A.map l g s) == A.map l (f << g) s
 
 
-setter_set_set : (Optic pr ls a d a d -> Optic pr ls t t a d) -> t -> d -> d -> Bool
+setter_set_set : An_Optic pr ls s a -> s -> a -> a -> Bool
 setter_set_set l s a b =
     A.set l b (A.set l a s) == A.set l b s
 
 
-lens_set_get : (Getter pr a a a a -> Getter pr b b a a) -> b -> Bool
+lens_set_get : A_Lens pr b a -> b -> Bool
 lens_set_get l s =
     A.set l (A.get l s) s == s
 
 
-lens_get_set : (Getter pr c c c c -> Getter pr t t c c) -> t -> c -> Bool
+lens_get_set : A_Lens pr s a -> s -> a -> Bool
 lens_get_set l s a =
     A.get l (A.set l a s) == a
 
 
-prism_yin : (Review ls a a a a -> Review ls s s a a) -> a -> Bool
+prism_yin : A_Prism ls s a -> a -> Bool
 prism_yin l a =
     try l (new l a) == Just a
 
 
-prism_yang : (Review ls a a a a -> Review ls s s a a) -> s -> Bool
+prism_yang : A_Prism ls s a -> s -> Bool
 prism_yang l s =
     (Maybe.withDefault s <| Maybe.map (new l) (try l s)) == s
 
 
-iso_hither : (Getter pr a a a a -> Getter pr s s a a) -> s -> Bool
+iso_hither : An_Iso s a -> s -> Bool
 iso_hither l s =
     (from l <| to l s) == s
 
 
-iso_yon : (Getter pr a a a a -> Getter pr s s a a) -> a -> Bool
+iso_yon : An_Iso s a -> a -> Bool
 iso_yon l a =
     (to l <| from l a) == a
 
