@@ -1,11 +1,11 @@
 module Tree.Accessors exposing
-    ( at, label_, path
+    ( at, label_, path, at_, id
     , each
     )
 
 {-| List.Accessors
 
-@docs at, label_, path
+@docs at, label_, path, at_, id
 @docs each
 
 -}
@@ -13,6 +13,7 @@ module Tree.Accessors exposing
 import Base exposing (Lens, Traversal, Traversal_)
 import Tree exposing (Tree)
 import Tree.Extra.Lue as Tree
+import Tree.Zipper as Zipper
 import TreePath exposing (TreePath)
 
 
@@ -136,3 +137,28 @@ path p =
 each : Traversal_ (Tree a) (Tree b) a b x y
 each =
     Base.traversal "<>" Tree.flatten Tree.map
+
+
+{-| -}
+at_ : (a -> String) -> a -> Traversal (Tree { z | id : a }) (Tree { z | id : a }) x y
+at_ toString id_ =
+    Base.traversal
+        ("<" ++ toString id_ ++ ">")
+        (Zipper.fromTree
+            >> Zipper.findFromRoot (\i -> i.id == id_)
+            >> Maybe.map (Zipper.toTree >> List.singleton)
+            >> Maybe.withDefault []
+        )
+        (\fn t ->
+            t
+                |> Zipper.fromTree
+                |> Zipper.findFromRoot (\i -> i.id == id_)
+                |> Maybe.map (Zipper.mapTree fn >> Zipper.toTree)
+                |> Maybe.withDefault t
+        )
+
+
+{-| -}
+id : String -> Traversal (Tree { z | id : String }) (Tree { z | id : String }) x y
+id =
+    at_ identity
