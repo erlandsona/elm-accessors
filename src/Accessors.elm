@@ -2,7 +2,7 @@ module Accessors exposing
     ( Optic
     , Iso, Lens, Prism, Traversal
     , traversal, lens, prism, iso
-    , get, all, try, has, is, map, over, set, new, name, to, from
+    , get, all, try, has, is, map, over, set, new, name, to, from, swap
     , ixd
     , Iso_, Lens_, Prism_, Traversal_
     , An_Optic, An_Iso, A_Lens, A_Prism
@@ -39,7 +39,7 @@ Accessors are built using these functions:
 Action functions are functions that take an accessor and let you perform a
 specific action on data using that accessor.
 
-@docs get, all, try, has, is, map, over, set, new, name, to, from
+@docs get, all, try, has, is, map, over, set, new, name, to, from, swap
 
 
 ## Lifters for composing w/ indexed optics
@@ -279,6 +279,13 @@ from =
 to : An_Iso_ s t a b -> s -> a
 to =
     Base.to
+
+
+{-| swap the parent and target types of an iso for composition chains.
+-}
+swap : An_Iso_ s t a b -> Optic pr ls b a t s x y
+swap i =
+    iso (name i) (from i) (to i)
 
 
 

@@ -3,6 +3,10 @@
   "tests": [
     "Accessors",
     "Array.Accessors",
+    "Color.ElmUI.Accessors",
+    "Color.Oklch.Accessors",
+    "Color.HSLuv.Accessors",
+    "Color.Palette.Accessors",
     "Dict.Accessors",
     "List.Accessors",
     "SelectList.Accessors",

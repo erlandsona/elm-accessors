@@ -36,6 +36,6 @@ see [`try_`](Maybe-Accessors#try_) for a flattening lens.
     --> {foo = Just {bar = Just {stuff = Just 2}}, qux = Nothing}
 
 -}
-just : Prism_ pr (Maybe a) (Maybe b)  a b x y
+just : Prism_ pr (Maybe a) (Maybe b) a b x y
 just =
     Base.prism "?" Just (Result.fromMaybe Nothing)
