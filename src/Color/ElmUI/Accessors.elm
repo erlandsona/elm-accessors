@@ -1,8 +1,13 @@
 module Color.ElmUI.Accessors exposing (color)
 
+{-| Color.ElmUI.Accessors
+
+@docs color
+
+-}
+
 import Base exposing (Iso)
 import Color exposing (Color)
-import Color.Round as Round
 import Element as E
 
 

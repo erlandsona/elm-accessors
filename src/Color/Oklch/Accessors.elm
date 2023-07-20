@@ -1,5 +1,11 @@
 module Color.Oklch.Accessors exposing (color, oklab)
 
+{-| Color.Oklch.Accessors
+
+@docs color, oklab
+
+-}
+
 import Base exposing (Iso)
 import Color exposing (Color)
 import Color.Oklab exposing (Oklab)
@@ -32,8 +38,7 @@ color =
 
 {-| oklab: This accessor lets you convert between oklch & avh4/elm-color
 
-    import Accessors exposing (..)
-    import Color.Oklch.Accessors exposing (..)
+    import Accessors exposing (to, from)
     import Color
 
 

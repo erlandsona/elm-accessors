@@ -1,5 +1,11 @@
 module Color.Palette.Accessors exposing (hexA, solid, transparent)
 
+{-| Color.Palette.Accessors
+
+@docs hexA, solid, transparent
+
+-}
+
 import Base exposing (Iso, Prism)
 import Color exposing (Color)
 import Color.Round as Round
@@ -9,8 +15,7 @@ import TransparentColor exposing (TransparentColor)
 
 {-| transparent: This accessor lets you convert between avh4/elm-color & tesk9/palette TransparentColor
 
-    import Accessors exposing (..)
-    import Color.Palette.Accessors exposing (..)
+    import Accessors exposing (to, from)
     import Color
 
 
@@ -31,8 +36,7 @@ transparent =
 
 {-| solid: This accessor lets you convert between tesk9/palette TransparentColor && SolidColor
 
-    import Accessors exposing (..)
-    import Color.Palette.Accessors exposing (..)
+    import Accessors exposing (to, from)
     import Color
 
 
@@ -47,8 +51,7 @@ solid =
 
 {-| hex: This accessor lets you convert between tesk9/palette TransparentColor && SolidColor
 
-    import Accessors exposing (..)
-    import Color.Palette.Accessors exposing (..)
+    import Accessors exposing (swap, new, try)
     import Color
 
 

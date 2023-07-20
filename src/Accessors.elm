@@ -12,6 +12,7 @@ module Accessors exposing
     , each, eachIdx, at
     , every, everyIdx, ix
     , fst, snd
+    , hexA, transparent, solid, oklch, oklab, elmui, hsluv
     )
 
 {-| Accessors are a way of operating on nested data in Elm that doesn't require gobs of boilerplate.
@@ -62,16 +63,32 @@ specific action on data using that accessor.
 @docs every, everyIdx, ix
 @docs fst, snd
 
+
+## Color Iso's :raised\_hands: wooo!!! For seemless composition of colors.
+
+@docs hexA, transparent, solid, oklch, oklab, elmui, hsluv
+
 -}
 
 import Array exposing (Array)
 import Array.Accessors as Array
 import Base
+import Color exposing (Color)
+import Color.ElmUI.Accessors as ElmUI
+import Color.HSLuv.Accessors as HSLuv
+import Color.Oklab exposing (Oklab)
+import Color.Oklch exposing (Oklch)
+import Color.Oklch.Accessors as Oklch
+import Color.Palette.Accessors as Palette
 import Dict exposing (Dict)
 import Dict.Accessors as Dict
+import Element as E
+import HSLuv exposing (HSLuv)
 import List.Accessors as List
 import Maybe.Accessors as Maybe
 import Result.Accessors as Result
+import SolidColor exposing (SolidColor)
+import TransparentColor exposing (TransparentColor)
 import Tuple.Accessors as Tuple
 
 
@@ -861,3 +878,103 @@ fst =
 snd : Lens_ ls ( one, a ) ( one, b ) a b x y
 snd =
     Tuple.snd
+
+
+{-| solid: This accessor lets you convert between tesk9/palette TransparentColor && SolidColor
+
+    import Color
+
+
+    from transparent <| to transparent Color.red
+    --> Color.red
+
+-}
+transparent : Iso pr ls Color TransparentColor x y
+transparent =
+    Palette.transparent
+
+
+{-| solid: This accessor lets you convert between tesk9/palette TransparentColor && SolidColor
+
+    import Color
+
+
+    from (transparent << solid) <| to (transparent << solid) Color.red
+    --> Color.red
+
+-}
+solid : Iso pr ls TransparentColor SolidColor x y
+solid =
+    Palette.solid
+
+
+{-| hex: This accessor lets you convert between tesk9/palette TransparentColor && SolidColor
+
+    import Color
+
+
+    new (hexA << swap transparent) Color.red
+    -->  "#CC0000"
+    try (hexA << swap transparent) "#C00F" -- with alpha channel
+    --> Just Color.red
+
+-}
+hexA : Base.Prism pr String TransparentColor x y
+hexA =
+    Palette.hexA
+
+
+{-| oklch: This accessor lets you convert between oklch & avh4/elm-color
+
+    import Color
+
+
+    from oklch <| to oklch Color.red
+    --> Color.red
+
+-}
+oklch : Iso pr ls Color Oklch x y
+oklch =
+    Oklch.color
+
+
+{-| oklab: This accessor lets you convert between oklch & avh4/elm-color
+
+    import Color
+
+
+    from (oklch << oklab) <| to (oklch << oklab) Color.red
+    --> Color.red
+
+-}
+oklab : Iso pr ls Oklch Oklab x y
+oklab =
+    Oklch.oklab
+
+
+{-| elmui: This accessor lets you convert between oklch & avh4/elm-color
+
+    import Color
+
+
+    from elmui <| to elmui Color.red
+    --> Color.red
+
+-}
+elmui : Iso pr ls Color E.Color x y
+elmui =
+    ElmUI.color
+
+
+{-| hsluv: This accessor lets you convert between oklch & avh4/elm-color
+
+    import Color
+
+
+    from hsluv <| to hsluv Color.red
+    --> Color.red
+
+-}
+hsluv : Iso pr ls Color HSLuv x y
+hsluv =
+    HSLuv.iso
