@@ -3,7 +3,7 @@
     "name": "erlandsona/elm-accessors",
     "summary": "Accessors, a library implementing lenses for Elm.",
     "license": "MIT",
-    "version": "4.1.0",
+    "version": "4.2.0",
     "exposed-modules": [
         "Accessors",
         "Array.Accessors",
